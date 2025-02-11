@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <sys/user.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -16,7 +17,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    pid_t program_pid = load_linux(&argv[1]);
+    struct user_regs_struct saved_regs;
+    pid_t program_pid = load_linux(&argv[1], &saved_regs);
 
     read_mapping(program_pid);
 

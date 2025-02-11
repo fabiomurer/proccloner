@@ -1,4 +1,7 @@
+#include "load_linux.h"
+
 #include <sys/ptrace.h>
+#include <sys/user.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/signal.h>
@@ -14,7 +17,7 @@ void error_and_exit(const char *msg) {
     exit(EXIT_FAILURE);
 }
 
-pid_t load_linux(char** argv) {
+pid_t load_linux(char** argv, struct user_regs_struct* saved_regs) {
     int status = 0;
     pid_t child = fork();
 
@@ -66,6 +69,20 @@ pid_t load_linux(char** argv) {
         // Check if this stop is due to the exec event.
         if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP && (status >> 16) == PTRACE_EVENT_EXEC) {
             printf("process with pid: %d is loaded and stopped\n", child);
+
+            
+            if (ptrace(PTRACE_GETREGS, child, NULL, saved_regs) == -1) {
+                error_and_exit("ptrace(PTRACE_GETREGS)");
+            }
+
+            printf("REGS:\n");
+            printf("\tRIP: 0x%llx\n", saved_regs->rip);
+            printf("\tRSP: 0x%llx\n", saved_regs->rsp);
+            printf("\tRBP: 0x%llx\n", saved_regs->rbp);
+            printf("\tRAX: 0x%llx\n", saved_regs->rax);
+            printf("\tRBX: 0x%llx\n", saved_regs->rbx);
+            printf("\tRCX: 0x%llx\n", saved_regs->rcx);
+
             return child;
         } else {
             fprintf(stderr, "Unexpected stop before exec event occurred.\n");
