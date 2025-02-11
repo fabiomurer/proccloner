@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-
+#include <sys/personality.h>
 
 void error_and_exit(const char *msg) {
     perror(msg);
@@ -32,6 +32,11 @@ pid_t load_linux(char** argv, struct user_regs_struct* saved_regs) {
         }
         // Stop so the parent can set options.
         raise(SIGSTOP);
+        
+        // turn off address randomization
+        if (personality(ADDR_NO_RANDOMIZE) == -1) {
+            error_and_exit("personality(ADDR_NO_RANDOMIZE)");
+        }
 
         // Replace the child process with the target program.
         // Note: We pass argv[0] as the program and &argv[0] as its arguments.
