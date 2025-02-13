@@ -35,10 +35,10 @@ int perms_to_prot(char* perms) {
 }
 
 void write_mapping_mem(u_int8_t* buffer, u_int64_t len, u_int64_t start, u_int64_t end, char* perms, char* pathname) {
-    //int flags = MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE;
+    int flags = MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE;
     int prot  = perms_to_prot(perms);
 
-    void* p = mmap((void*)start, len, prot, PROT_READ | PROT_WRITE | PROT_EXEC, -1, 0);
+    void* p = mmap((void*)start, len, PROT_READ | PROT_WRITE | PROT_EXEC, flags, -1, 0);
 
     if (p == MAP_FAILED) error_and_exit("mmap");
     if (p != (void*)start) {
@@ -48,5 +48,9 @@ void write_mapping_mem(u_int8_t* buffer, u_int64_t len, u_int64_t start, u_int64
 
     memcpy(p, buffer, len);
 
-    // mmprotect proto
+    if (mprotect(p, len, prot) == -1) {
+        error_and_exit("mprotect");
+    }
+
+    printf("Mappend segment 0x%lx-0x%lx (%ld bytes)\n", start, end, len);
 }

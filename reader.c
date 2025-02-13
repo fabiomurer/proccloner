@@ -65,17 +65,16 @@ void read_mapping(pid_t pid) {
         // Read the segment from the process's memory.
         ssize_t read_bytes = pread(mem_fd, buffer, segment_size, start);
         if (read_bytes < 0) {
-            fprintf(stderr, "Failed to read memory from 0x%lx to 0x%lx: %s\n",
-                    start, end, strerror(errno));
-            free(buffer);
-            continue;
+            fprintf(stderr, "Failed to read memory from 0x%lx to 0x%lx: %s\n", start, end, strerror(errno));
+            // fill buffer with zeros
+            memset(buffer, 0, segment_size);
+        } else {
+            printf("Extracted segment 0x%lx-0x%lx (%ld bytes)\n", start, end, (long)read_bytes);
         }
 
         write_mapping_mem(buffer, read_bytes, start, end, perms, pathname);
 
         free(buffer);
-
-        printf("Extracted segment 0x%lx-0x%lx (%ld bytes)\n", start, end, (long)read_bytes);
     }
 
     close(mem_fd);
