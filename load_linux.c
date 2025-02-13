@@ -11,10 +11,56 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/personality.h>
+#include <sys/reg.h>
+#include <elf.h>
+#include <stdbool.h>
+
+#define WORDLEN sizeof(intptr_t)
 
 void error_and_exit(const char *msg) {
     perror(msg);
     exit(EXIT_FAILURE);
+}
+
+// https://github.com/danteu/novdso
+void remove_vdso(int pid) {
+    u_int64_t val;
+  
+    // get rsp value, rsp is at the start of stack because program is just sarted execution
+    errno = 0; // clear errno
+    size_t pos = (size_t)ptrace(PTRACE_PEEKUSER, pid, WORDLEN * RSP, NULL);
+    if (errno != 0) error_and_exit("ptrace(PTRACE_PEEKUSER)");
+    
+  
+    // go to the auxiliary vector, auxvt start after two nulls
+    int zeroCount = 0;
+    while (zeroCount < 2) {
+        errno = 0; // clear errno
+        val = ptrace(PTRACE_PEEKDATA, pid, pos += WORDLEN, NULL);
+        if (errno != 0) error_and_exit("ptrace(PTRACE_PEEKDATA)");
+
+        if (val == AT_NULL) zeroCount++;
+    }
+  
+    // search the auxiliary vector for AT_SYSINFO_EHDR
+    errno = 0; // clear errno
+    val = ptrace(PTRACE_PEEKDATA, pid, pos += WORDLEN, NULL);
+    if (errno != 0) error_and_exit("ptrace(PTRACE_PEEKDATA)");
+
+    while(true) {
+        if (val == AT_NULL)
+            // auxiliary vector end
+            break;
+        if (val == AT_SYSINFO_EHDR) {
+            // found it, make it invalid
+            if (ptrace(PTRACE_POKEDATA, pid, pos, AT_IGNORE) == -1) error_and_exit("ptrace(PTRACE_POKEDATA)");
+            break;
+        }
+      
+        errno = 0; // clear errno
+        val = ptrace(PTRACE_PEEKDATA, pid, pos += sizeof(Elf64_auxv_t), NULL);
+        if (errno != 0) error_and_exit("ptrace(PTRACE_PEEKDATA)");
+    }
 }
 
 pid_t load_linux(char** argv, struct user_regs_struct* saved_regs) {
@@ -33,7 +79,7 @@ pid_t load_linux(char** argv, struct user_regs_struct* saved_regs) {
         // Stop so the parent can set options.
         raise(SIGSTOP);
         
-        // turn off address randomization
+        // disable address randomization
         if (personality(ADDR_NO_RANDOMIZE) == -1) {
             error_and_exit("personality(ADDR_NO_RANDOMIZE)");
         }
@@ -75,6 +121,8 @@ pid_t load_linux(char** argv, struct user_regs_struct* saved_regs) {
         if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP && (status >> 16) == PTRACE_EVENT_EXEC) {
             printf("process with pid: %d is loaded and stopped\n", child);
 
+            // disable VDSO
+            remove_vdso(child);
             
             if (ptrace(PTRACE_GETREGS, child, NULL, saved_regs) == -1) {
                 error_and_exit("ptrace(PTRACE_GETREGS)");
