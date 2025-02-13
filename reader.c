@@ -71,7 +71,7 @@ void read_mapping(pid_t pid) {
             continue;
         }
 
-        write_mapping_file(buffer, read_bytes, start, end);
+        write_mapping_mem(buffer, read_bytes, start, end, perms, pathname);
 
         free(buffer);
 

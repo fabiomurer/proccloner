@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -O2
+CFLAGS = -Wall -Wextra -Werror -O2 -static -Wl,-Ttext-segment,0x70000000
 TARGET = proccloner
-SRC = proccloner.c writer.c reader.c load_linux.c
+SRC = proccloner.c writer.c reader.c load_linux.c utility.c
 OBJ = $(SRC:.c=.o)
 
 .PHONY: all clean

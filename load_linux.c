@@ -1,4 +1,5 @@
 #include "load_linux.h"
+#include "utility.h"
 
 #include <sys/ptrace.h>
 #include <sys/user.h>
@@ -16,11 +17,6 @@
 #include <stdbool.h>
 
 #define WORDLEN sizeof(intptr_t)
-
-void error_and_exit(const char *msg) {
-    perror(msg);
-    exit(EXIT_FAILURE);
-}
 
 // https://github.com/danteu/novdso
 void remove_vdso(int pid) {
