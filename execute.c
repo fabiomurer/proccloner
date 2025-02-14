@@ -2,6 +2,7 @@
 #include "execute.h"
 
 void transfer_execution(void) {
+    // TODO: set floating point registers
     __asm__ volatile (
         // Load general purpose registers from saved_regs.
         "movq saved_regs+0(%rip),  %r15\n\t"   // r15

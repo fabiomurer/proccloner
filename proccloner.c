@@ -22,11 +22,12 @@ int main(int argc, char *argv[]) {
 
     read_mapping(program_pid);
 
+    // kill traced process
     if (kill(program_pid, SIGKILL) == -1) {
         perror("kill");
         exit(EXIT_FAILURE);
     }
-
+    
     int status;
     waitpid(program_pid, &status, 0);
 
