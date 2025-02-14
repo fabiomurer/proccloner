@@ -1,5 +1,6 @@
 #include "reader.h"
 #include "load_linux.h"
+#include "execute.h"
 
 #include <linux/limits.h>
 #include <signal.h>
@@ -17,8 +18,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    struct user_regs_struct saved_regs;
-    pid_t program_pid = load_linux(&argv[1], &saved_regs);
+    pid_t program_pid = load_linux(&argv[1]);
 
     read_mapping(program_pid);
 
@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
 
     int status;
     waitpid(program_pid, &status, 0);
+
+    transfer_execution();
     
     return 0;
 }

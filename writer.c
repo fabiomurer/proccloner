@@ -40,9 +40,12 @@ void write_mapping_mem(u_int8_t* buffer, u_int64_t len, u_int64_t start, u_int64
 
     void* p = mmap((void*)start, len, PROT_READ | PROT_WRITE | PROT_EXEC, flags, -1, 0);
 
-    if (p == MAP_FAILED) error_and_exit("mmap");
+    if (p == MAP_FAILED)  {
+        fprintf(stderr, "cannot mmap segment %lx-%lx pathname: %s, error: %s\n", start, end, pathname, strerror(errno));
+        return;
+    }
     if (p != (void*)start) {
-        fprintf(stderr, "not able to mmap at right address, start: %lx, end: %lx len: %ld, pathname: %s\n", start, end, len, pathname);
+        fprintf(stderr, "not able to mmap at right address, %lx-%lx, pathname: %s\n", start, end, pathname);
         exit(EXIT_FAILURE);
     }
 

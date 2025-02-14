@@ -72,7 +72,7 @@ void read_mapping(pid_t pid) {
             printf("Extracted segment 0x%lx-0x%lx (%ld bytes)\n", start, end, (long)read_bytes);
         }
 
-        write_mapping_mem(buffer, read_bytes, start, end, perms, pathname);
+        write_mapping_mem(buffer, segment_size, start, end, perms, pathname);
 
         free(buffer);
     }

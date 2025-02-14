@@ -1,5 +1,6 @@
 #include "load_linux.h"
 #include "utility.h"
+#include "globals.h"
 
 #include <sys/ptrace.h>
 #include <sys/user.h>
@@ -59,7 +60,7 @@ void remove_vdso(int pid) {
     }
 }
 
-pid_t load_linux(char** argv, struct user_regs_struct* saved_regs) {
+pid_t load_linux(char** argv) {
     int status = 0;
     pid_t child = fork();
 
@@ -120,17 +121,17 @@ pid_t load_linux(char** argv, struct user_regs_struct* saved_regs) {
             // disable VDSO
             remove_vdso(child);
             
-            if (ptrace(PTRACE_GETREGS, child, NULL, saved_regs) == -1) {
+            if (ptrace(PTRACE_GETREGS, child, NULL, &saved_regs) == -1) {
                 error_and_exit("ptrace(PTRACE_GETREGS)");
             }
 
             printf("REGS:\n");
-            printf("\tRIP: 0x%llx\n", saved_regs->rip);
-            printf("\tRSP: 0x%llx\n", saved_regs->rsp);
-            printf("\tRBP: 0x%llx\n", saved_regs->rbp);
-            printf("\tRAX: 0x%llx\n", saved_regs->rax);
-            printf("\tRBX: 0x%llx\n", saved_regs->rbx);
-            printf("\tRCX: 0x%llx\n", saved_regs->rcx);
+            printf("\tRIP: 0x%llx\n", saved_regs.rip);
+            printf("\tRSP: 0x%llx\n", saved_regs.rsp);
+            printf("\tRBP: 0x%llx\n", saved_regs.rbp);
+            printf("\tRAX: 0x%llx\n", saved_regs.rax);
+            printf("\tRBX: 0x%llx\n", saved_regs.rbx);
+            printf("\tRCX: 0x%llx\n", saved_regs.rcx);
 
             return child;
         } else {
